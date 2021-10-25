@@ -1,18 +1,23 @@
+function closeModal() {
+    // modalWindow.style.display = 'none';
+    const modalWindow = document.querySelector('.modal-wrapper');
+    modalWindow.remove();
+}
 class User {
     constructor(id, name, email, address, phone) {
+        this.id = id;
         this.name = name;
         this.email = email;
         this.address = address;
         this.phone = phone;
-        this.id = id;
+        
     }
 
     edit(name = this.name, email = this.email, address = this.address, phone = this.phone) { 
         this.name = name;
         this.email = email;
         this.address = address;
-        this.phone = phone;
-           
+        this.phone = phone;   
     }
 
     get() {
@@ -27,15 +32,17 @@ class User {
 }
 
 class Contacts {
-    constructor() {
+    constructor(name) {
         this.contactsList = [];
     }
     add (name, email, address, phone) {
         const id = this.contactsList.length;
         const contact = new User(id, name, email, address, phone);
         this.contactsList.push(contact);
+       
+        
     }
-    edit (id, name, email, address, phone) {
+    editContact (id, name, email, address, phone) {
         this.contactsList[id].edit(name, email, address, phone);
     }
 
@@ -53,48 +60,125 @@ class ContactsApp extends Contacts {
         super();
     }
 
-    draw () {
+    get contactListMethod() {
+        return this.contactsList;
+    }
 
+    set contactListMethod(newContactsList) {
+        this.contactsList = newContactsList;
+    }
+
+    get localContacts() {
+        const jsonContacts = localStorage.getItem('contacts');
+        return JSON.parse(jsonContacts);
+    }
+
+    set localContacts (contactsList) {
+        const jsonContacts = JSON.stringify(contactsList);
+        localStorage.setItem('contacts', jsonContacts);
+
+    }
+
+    onRemoveEdit (){
+        
+        const openModal = () => {
+            document.body.insertAdjacentHTML('beforeend', `
+            <div class="modal-wrapper">
+                <div class="modal-box">
+                    <span class="close">x</span>
+                    <h1>Edit contact</h1>
+                </div>
+            </div>
+            `)
+            const contentBox = document.querySelector('.modal-box');
+            const nameInput = document.createElement('input');
+            nameInput.placeholder = 'Enter new name';
+            const emailInput = document.createElement('input');
+            emailInput.placeholder = 'Enter new email';
+            const phoneInput = document.createElement('input');
+            phoneInput.placeholder = 'Enter new phone';
+            const addressInput = document.createElement('input');
+            addressInput.placeholder = 'Enter new address';
+            const save = document.createElement('button');
+            const newName = nameInput.value;
+            const newEmail = emailInput.value;
+            const newPhone = phoneInput.value;
+            const newAddress = addressInput.value;
+            save.innerText = 'Save';
+
+            save.addEventListener('click', () => {
+                this.editContact(id, newName, newEmail, newPhone, newAddress);
+                closeModal();
+                this.draw();
+            })
+
+            contentBox.appendChild(nameInput);
+            contentBox.appendChild(emailInput);
+            contentBox.appendChild(phoneInput);
+            contentBox.appendChild(addressInput);
+
+            contentBox.appendChild(save);
+            const close = document.querySelector('.close');
+            close.addEventListener('click', closeModal);
+        }
+        const wrapperBtns = document.createElement('div');
+        const editBtn = document.createElement('button');
+        editBtn.innerText = 'Edit';
+        const removeBtn = document.createElement('button');
+        removeBtn.innerText = 'Remove';
+        removeBtn.addEventListener ('click', () => {
+            this.remove(id);
+            this.draw();  
+        });
+
+        editBtn.addEventListener('click', openModal);
+        wrapperBtns.appendChild(editBtn);
+        wrapperBtns.appendChild(removeBtn);  
+        return wrapperBtns;
+ 
+    }
+
+  
+
+   
+
+    draw () {
+        this.localContacts = this.contactsList;
         const oldList = document.getElementById('contactList');
         if (oldList) {
             oldList.remove();
         }
         
-        
         const contactList = document.createElement('ul');
         contactList.id = 'contactList';
-        const deleteAllBtn = document.createElement('button');
-        deleteAllBtn.innerText = 'Delete all contacts';
-        contactList.appendChild(deleteAllBtn);
-        deleteAllBtn.addEventListener('click', () => {
-            contactList.remove();
-        })
-        this.contactsList.map((contact) => {
-            const li = document.createElement('li');
-            const contactNode = document.createElement('h2');
-            contactNode.innerText = contact.name;
-            const emailNode = document.createElement('p');
-            emailNode.innerText = contact.email;
-            const addressNode = document.createElement('p');
-            addressNode.innerText = contact.address;
-            const phoneNode = document.createElement('p');
-            phoneNode.innerText = contact.phone;
-            li.appendChild(contactNode);
-            li.appendChild(emailNode);
-            li.appendChild(addressNode);
-            li.appendChild(phoneNode);
-            contactList.appendChild(li);
-        });
-        document.body.appendChild(contactList);
+    
         
+        this.contactsList.map((contact) => {
+            if(contact) {
+                const li = document.createElement('li');
+                const contactNode = document.createElement('h2');
+                contactNode.innerText = contact.name;
+                const emailNode = document.createElement('p');
+                emailNode.innerText = contact.email;
+                const addressNode = document.createElement('p');
+                addressNode.innerText = contact.address;
+                const phoneNode = document.createElement('p');
+                phoneNode.innerText = contact.phone;
+                li.appendChild(contactNode);
+                li.appendChild(emailNode);
+                li.appendChild(addressNode);
+                li.appendChild(phoneNode);
+                contactList.appendChild(li);
+                const btns = this.onRemoveEdit(contact.id);
+                li.appendChild(btns);
+            }
+        });
+       document.body.appendChild(contactList);
         
     }
 
-
-
     creation() {
-        const app = document.createElement('div');
-        app.classList.add('contacts');
+
         const form = document.createElement('form');
         const contactName = document.createElement('input');
         contactName.placeholder = 'Enter name';
@@ -105,7 +189,7 @@ class ContactsApp extends Contacts {
         const contactPhone = document.createElement('input');
         contactPhone.placeholder = 'Enter phone';
        
-        app.appendChild(form);
+        
         form.appendChild(contactName);
         form.appendChild(contactEmail);
         form.appendChild(contactAddress);
@@ -127,19 +211,24 @@ class ContactsApp extends Contacts {
             const phone = event.currentTarget[3].value;
             event.currentTarget[3].value = '';
             this.add(name, email, address, phone);
+            
             this.draw();
         })
-        document.body.appendChild(app);
-    }
+        document.body.appendChild(form);
 
-
-    
+        if(!localStorage.getItem('contacts')) {
+            this.localContacts = this.contactsList;
+        } else {
+            this.contactsList = this.localContacts;
+            this.draw();
+        }
+    }   
 
 }
 const contact1 = new User('Alex', 'alex@gmail.com', 'Minsk', '80299465235');
-const contacts = new ContactsApp();
-contacts.creation();
-console.log(contacts);
+const listOfContacts = new ContactsApp();
+listOfContacts.creation();
+console.log(listOfContacts);
 /*contacts.add('Alex', 'alex@gmail.com', 'Minsk', '80299465235');
 contacts.add('Bob', 'alex@gmail.com', 'Minsk', '80299465235');
 contacts.add('Dan', 'Dan@gmail.com', 'Moscow', '80258945678');
