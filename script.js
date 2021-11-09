@@ -4,7 +4,7 @@ function closeModal() {
     modalWindow.remove();
 }
 class User {
-    constructor(id, name, email, address, phone) {
+    constructor({id, name, email, address, phone}) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -13,7 +13,7 @@ class User {
         
     }
 
-    edit(name = this.name, email = this.email, address = this.address, phone = this.phone) { 
+    edit({name = this.name, email = this.email, address = this.address, phone = this.phone}) { 
         this.name = name;
         this.email = email;
         this.address = address;
@@ -37,13 +37,18 @@ class Contacts {
     }
     add (name, email, address, phone) {
         const id = this.contactsList.length;
-        const contact = new User(id, name, email, address, phone);
+        const contact = new User({id, name, email, address, phone});
         this.contactsList.push(contact);
        
         
     }
-    editContact (id, name, email, address, phone) {
-        this.contactsList[id].edit(name, email, address, phone);
+    editContact (data) {
+        const { name, id, email, address, phone } = data
+        this.contactsList[id].name = name;
+        this.contactsList[id].email = email;
+        this.contactsList[id].address = address;
+        this.contactsList[id].phone = phone;
+        
     }
 
     remove(id) {
@@ -79,7 +84,17 @@ class ContactsApp extends Contacts {
 
     }
 
-    onRemoveEdit (){
+    getData () {
+        fetch('https://jsonplaceholder.typicode.com/users')
+        .then(response => response.json())
+        .then((json) => {
+            this.contactsList = json;
+            this.draw();
+        });
+    }
+
+
+    onRemoveEdit (id){
         
         const openModal = () => {
             document.body.insertAdjacentHTML('beforeend', `
@@ -100,14 +115,10 @@ class ContactsApp extends Contacts {
             const addressInput = document.createElement('input');
             addressInput.placeholder = 'Enter new address';
             const save = document.createElement('button');
-            const newName = nameInput.value;
-            const newEmail = emailInput.value;
-            const newPhone = phoneInput.value;
-            const newAddress = addressInput.value;
             save.innerText = 'Save';
 
             save.addEventListener('click', () => {
-                this.editContact(id, newName, newEmail, newPhone, newAddress);
+                this.editContact({id: id, name: nameInput.value, email: emailInput.value, phone: phoneInput.value, address: addressInput.value});
                 closeModal();
                 this.draw();
             })
@@ -138,9 +149,6 @@ class ContactsApp extends Contacts {
  
     }
 
-  
-
-   
 
     draw () {
         this.localContacts = this.contactsList;
@@ -217,7 +225,8 @@ class ContactsApp extends Contacts {
         document.body.appendChild(form);
 
         if(!localStorage.getItem('contacts')) {
-            this.localContacts = this.contactsList;
+            this.getData();
+            this.localContacts = contactsList;
         } else {
             this.contactsList = this.localContacts;
             this.draw();
