@@ -36,7 +36,7 @@ class Contacts {
         this.contactsList = [];
     }
     add (name, email, address, phone) {
-        const id = this.contactsList.length;
+        const id = this.contactsList.length + 1;
         const contact = new User({id, name, email, address, phone});
         this.contactsList.push(contact);
        
@@ -44,15 +44,15 @@ class Contacts {
     }
     editContact (data) {
         const { name, id, email, address, phone } = data
-        this.contactsList[id].name = name;
-        this.contactsList[id].email = email;
-        this.contactsList[id].address = address;
-        this.contactsList[id].phone = phone;
+        this.contactsList[id - 1].name = name;
+        this.contactsList[id - 1].email = email;
+        this.contactsList[id - 1].address = address;
+        this.contactsList[id - 1].phone = phone;
         
     }
 
     remove(id) {
-        delete this.contactsList[id];
+        delete this.contactsList[id - 1];
     }
 
     get () {
